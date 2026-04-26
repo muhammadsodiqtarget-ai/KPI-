@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI Dashboard — Bobur Musaboyev</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #18181f;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0f0f8;
+  --text2: #8a8a9a;
+  --text3: #55556a;
+  --accent: #7c6dfa;
+  --accent2: #a394ff;
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.1);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245,158,11,0.1);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.1);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.1);
+  --card: #13131a;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+.nav-inner {
+  display: flex; align-items: center; gap: 0;
+  max-width: 900px; margin: 0 auto;
+}
+.nav-brand {
+  font-family: var(--font-head);
+  font-size: 15px; font-weight: 700;
+  color: var(--text); padding: 14px 0;
+  margin-right: auto;
+  letter-spacing: -0.3px;
+}
+.nav-brand span { color: var(--accent); }
+.nav-tabs {
+  display: flex; gap: 2px;
+}
+.nav-tab {
+  padding: 10px 14px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text2);
+  border: none; background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+/* ── LAYOUT ── */
+.main { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── HEADER STRIP ── */
+.page-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px; gap: 12px;
+  flex-wrap: wrap;
+}
+.page-title {
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.page-sub { font-size: 12px; color: var(--text3); margin-top: 3px; font-family: var(--font-mono); }
+
+/* ── METRIC GRID ── */
+.metric-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+@media(min-width: 600px) { .metric-row { grid-template-columns: repeat(4, 1fr); } }
+.metric-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  position: relative; overflow: hidden;
+}
+.metric-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.metric-card:hover::before { opacity: 1; }
+.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-val { font-family: var(--font-head); font-size: 24px; font-weight: 700; }
+.metric-val.green { color: var(--green); }
+.metric-val.amber { color: var(--amber); }
+.metric-val.blue { color: var(--blue); }
+
+/* ── TOTAL CARD ── */
+.total-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px; gap: 16px;
+  flex-wrap: wrap;
+}
+.total-main .label { font-size: 11px; color: var(--text3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.total-main .amount { font-family: var(--font-head); font-size: 32px; font-weight: 800; background: linear-gradient(135deg, var(--accent2), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.total-side { text-align: right; }
+.total-side .label { font-size: 11px; color: var(--text3); font-family: var(--font-mono); text-transform: uppercase; margin-bottom: 4px; }
+.total-side .val { font-family: var(--font-head); font-size: 18px; font-weight: 600; color: var(--text2); }
+
+/* ── SECTION CARD ── */
+.section-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.section-card-title {
+  font-size: 11px; font-weight: 600;
+  color: var(--text3);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── KPI ROW ── */
+.kpi-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.kpi-item:last-child { border-bottom: none; padding-bottom: 0; }
+.kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.kpi-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.kpi-earned {
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 500;
+}
+.kpi-pills { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
+.pill {
+  font-size: 10px; font-family: var(--font-mono);
+  padding: 2px 8px; border-radius: 99px; border: 1px solid;
+}
+.pill-min { border-color: rgba(239,68,68,0.3); color: var(--red); }
+.pill-plan { border-color: rgba(34,197,94,0.3); color: var(--green); }
+.pill-max { border-color: rgba(59,130,246,0.3); color: var(--blue); }
+.pill-w { border-color: rgba(255,255,255,0.15); color: var(--text2); }
+.kpi-controls { display: flex; align-items: center; gap: 10px; }
+.kpi-controls label { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.kpi-input {
+  width: 100px; padding: 6px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px; font-family: var(--font-mono);
+  outline: none; transition: border-color 0.2s;
+}
+.kpi-input:focus { border-color: var(--accent); }
+.kpi-prog-wrap { flex: 1; }
+.kpi-prog-bg {
+  background: var(--bg3);
+  border-radius: 99px; height: 5px;
+  overflow: hidden; margin-bottom: 2px;
+}
+.kpi-prog-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+.kpi-prog-label { font-size: 10px; color: var(--text3); text-align: right; font-family: var(--font-mono); }
+.status-tag {
+  font-size: 10px; padding: 2px 8px; border-radius: 99px;
+  font-family: var(--font-mono); white-space: nowrap;
+}
+.st-none { background: var(--bg3); color: var(--text3); }
+.st-low { background: var(--red-bg); color: var(--red); }
+.st-mid { background: var(--amber-bg); color: var(--amber); }
+.st-ok { background: var(--green-bg); color: var(--green); }
+.st-over { background: var(--blue-bg); color: var(--blue); }
+
+/* ── BUDGET HEADER ── */
+.budget-header {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+.bh-left .bh-label { font-size: 11px; color: var(--text3); font-family: var(--font-mono); text-transform: uppercase; }
+.bh-left .bh-budget { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--text2); }
+.bh-right .bh-label { font-size: 11px; color: var(--text3); text-align: right; font-family: var(--font-mono); text-transform: uppercase; }
+.bh-right .bh-earned { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--green); text-align: right; }
+
+/* ── REELS ── */
+.reels-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+@media(min-width: 600px) { .reels-form-grid { grid-template-columns: 2fr 1fr 1fr; } }
+.form-group label { display: block; font-size: 11px; color: var(--text3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.form-input {
+  width: 100%; padding: 8px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px; font-family: var(--font-body);
+  outline: none; transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--accent); }
+.btn-add {
+  width: 100%; padding: 10px;
+  background: var(--accent);
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: var(--font-head);
+  letter-spacing: 0.3px; transition: opacity 0.2s, transform 0.1s;
+  margin-top: 4px;
+}
+.btn-add:hover { opacity: 0.88; }
+.btn-add:active { transform: scale(0.98); }
+
+.reels-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+@media(min-width:600px){ .reels-stats { grid-template-columns: repeat(3,1fr); } }
+
+.reels-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 10px; font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text3); padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+tbody td { padding: 10px 10px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--bg3); }
+.del-btn {
+  background: var(--red-bg); border: 1px solid rgba(239,68,68,0.2);
+  color: var(--red); border-radius: var(--radius-sm);
+  padding: 4px 10px; font-size: 12px; cursor: pointer;
+  transition: background 0.2s;
+}
+.del-btn:hover { background: rgba(239,68,68,0.2); }
+.empty-row td { text-align: center; color: var(--text3); padding: 28px; }
+
+/* ── DASHBOARD KPI MINI ── */
+.mini-kpi { margin-bottom: 10px; }
+.mini-kpi-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.mini-kpi-name { font-size: 12px; color: var(--text2); }
+.mini-kpi-pct { font-size: 12px; font-family: var(--font-mono); font-weight: 500; }
+
+/* ── CHART ── */
+.chart-container { position: relative; height: 220px; width: 100%; }
+
+/* ── SECTION DIVIDER ── */
+.divider-label {
+  font-size: 10px; font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3); margin: 20px 0 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.divider-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── DASH SECTION TOTALS ── */
+.dash-section-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+@media(min-width:600px){ .dash-section-cards { grid-template-columns: repeat(3,1fr); } }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand"><span>KPI</span> Dashboard</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchPage('dash',this)">Dashboard</button>
+      <button class="nav-tab" onclick="switchPage('ig',this)">Instagram</button>
+      <button class="nav-tab" onclick="switchPage('tg',this)">Telegram</button>
+      <button class="nav-tab" onclick="switchPage('ins',this)">Insan</button>
+      <button class="nav-tab" onclick="switchPage('reels',this)">Reels</button>
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- ══ DASHBOARD ══ -->
+  <div id="page-dash" class="page active">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Umumiy KPI natijasi</div>
+      </div>
+    </div>
+
+    <div class="total-card">
+      <div class="total-main">
+        <div class="label">JAMI DAROMAD</div>
+        <div class="amount" id="dash-total">$0.00</div>
+      </div>
+      <div class="total-side">
+        <div class="label">MAKS. MUMKIN</div>
+        <div class="val">$1,960.00</div>
+      </div>
+    </div>
+
+    <div class="dash-section-cards">
+      <div class="metric-card">
+        <div class="metric-label">Instagram</div>
+        <div class="metric-val green" id="d-ig">$0.00</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Telegram</div>
+        <div class="metric-val green" id="d-tg">$0.00</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Insan</div>
+        <div class="metric-val green" id="d-ins">$0.00</div>
+      </div>
+    </div>
+
+    <div class="divider-label">KPI progress</div>
+    <div class="section-card">
+      <div id="dash-kpi-list"></div>
+    </div>
+
+    <div class="divider-label">Reels views grafigi</div>
+    <div class="section-card">
+      <div class="chart-container">
+        <canvas id="reelsChart" role="img" aria-label="Reels views bar chart">Reels ko'rishlar grafigi</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ INSTAGRAM ══ -->
+  <div id="page-ig" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Instagram</div>
+        <div class="page-sub">Bobur Musaboyev</div>
+      </div>
+    </div>
+    <div class="budget-header">
+      <div class="bh-left"><div class="bh-label">Umumiy budget</div><div class="bh-budget">$830.00</div></div>
+      <div class="bh-right"><div class="bh-label">Hisoblangan</div><div class="bh-earned" id="ig-earned">$0.00</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-card-title">KPI ko'rsatkichlar</div>
+      <div id="ig-kpis"></div>
+    </div>
+  </div>
+
+  <!-- ══ TELEGRAM ══ -->
+  <div id="page-tg" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Telegram</div>
+        <div class="page-sub">Bobur Musaboyev</div>
+      </div>
+    </div>
+    <div class="budget-header">
+      <div class="bh-left"><div class="bh-label">Umumiy budget</div><div class="bh-budget">$830.00</div></div>
+      <div class="bh-right"><div class="bh-label">Hisoblangan</div><div class="bh-earned" id="tg-earned">$0.00</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-card-title">KPI ko'rsatkichlar</div>
+      <div id="tg-kpis"></div>
+    </div>
+  </div>
+
+  <!-- ══ INSAN ══ -->
+  <div id="page-ins" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Insan profil</div>
+        <div class="page-sub">Kontent plan</div>
+      </div>
+    </div>
+    <div class="budget-header">
+      <div class="bh-left"><div class="bh-label">Umumiy budget</div><div class="bh-budget">$300.00</div></div>
+      <div class="bh-right"><div class="bh-label">Hisoblangan</div><div class="bh-earned" id="ins-earned">$0.00</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-card-title">KPI ko'rsatkichlar</div>
+      <div id="ins-kpis"></div>
+    </div>
+  </div>
+
+  <!-- ══ REELS ══ -->
+  <div id="page-reels" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Instagram Reels</div>
+        <div class="page-sub">Kontent bazasi</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">Yangi reels qo'shish</div>
+      <div class="reels-form-grid">
+        <div class="form-group">
+          <label>Reels nomi</label>
+          <input class="form-input" id="r-name" type="text" placeholder="masalan: Motivatsiya #1">
+        </div>
+        <div class="form-group">
+          <label>Sana</label>
+          <input class="form-input" id="r-date" type="date">
+        </div>
+        <div class="form-group">
+          <label>Prosmotr (views)</label>
+          <input class="form-input" id="r-views" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <button class="btn-add" onclick="addReel()">+ Reels qo'shish</button>
+    </div>
+
+    <div class="reels-stats" id="reels-stats">
+      <div class="metric-card"><div class="metric-label">Jami views</div><div class="metric-val blue" id="r-total">0</div></div>
+      <div class="metric-card"><div class="metric-label">O'rtacha views</div><div class="metric-val" id="r-avg">0</div></div>
+      <div class="metric-card"><div class="metric-label">Jami reels</div><div class="metric-val" id="r-count">0</div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">Reels ro'yxati</div>
+      <div class="reels-table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Nomi</th><th>Sana</th><th>Views</th><th></th></tr></thead>
+          <tbody id="reels-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const SK = 'kpi_v3';
+
+const KPI = {
+  ig: [
+    { id:'ig_subs',  name:'Obunachi soni',    min:500,  plan:1000, max:2000,  w:200 },
+    { id:'ig_pm',    name:'PM (prosmotr)',     min:5000, plan:15000,max:30000, w:250 },
+    { id:'ig_story', name:'Story aktivlik (%)',min:10,   plan:20,   max:35,    w:200 },
+    { id:'ig_kont',  name:'Kontent plan (%)',  min:60,   plan:100,  max:100,   w:180 },
+  ],
+  tg: [
+    { id:'tg_subs',  name:'Obunachi soni',     min:200,  plan:500,  max:1000,  w:200 },
+    { id:'tg_pm',    name:'PM (prosmotr)',      min:3000, plan:8000, max:15000, w:250 },
+    { id:'tg_react', name:'Reaksiya',           min:100,  plan:300,  max:600,   w:200 },
+    { id:'tg_unsub', name:'Chiqib ketish (%)',  min:0,    plan:5,    max:10,    w:180, inv:true },
+  ],
+  ins: [
+    { id:'ins_kont', name:'Kontent plan (%)',  min:60,   plan:100,  max:100,   w:300 },
+  ]
+};
+
+let S = (() => {
+  try { const r = localStorage.getItem(SK); if(r) return JSON.parse(r); } catch(e){}
+  const s = { vals:{}, reels:[] };
+  [...KPI.ig,...KPI.tg,...KPI.ins].forEach(k => s.vals[k.id]='');
+  return s;
+})();
+
+function save() { try { localStorage.setItem(SK, JSON.stringify(S)); } catch(e){} }
+
+function calc(kpi, raw) {
+  const v = parseFloat(raw);
+  if (isNaN(v) || raw==='') return { earned:0, pct:0, status:'none' };
+  const {min,plan,max,w,inv} = kpi;
+  let pct, earned;
+  if (inv) {
+    if (v <= plan)      { pct=100; earned=w; }
+    else if (v >= max)  { pct=0;   earned=0; }
+    else                { pct=(max-v)/(max-plan)*100; earned=w*pct/100; }
+  } else {
+    if (v >= max)       { pct=100; earned=w; }
+    else if (v >= plan) { pct=100; earned=w; }
+    else if (v >= min)  { pct=(v-min)/(plan-min)*100; earned=w*(v-min)/(plan-min); }
+    else                { pct=v/min*100; earned=w*(v/min); }
+  }
+  pct = Math.min(100, Math.max(0, pct));
+  earned = Math.max(0, earned);
+  let st;
+  if (raw==='') st='none';
+  else if (inv) {
+    if(v<=plan) st='ok'; else if(v>=max) st='low'; else st='mid';
+  } else {
+    if(v<min) st='low'; else if(v>=plan) st=(v>plan?'over':'ok'); else st='mid';
+  }
+  return { earned, pct, status:st };
+}
+
+function sectionTotal(arr) {
+  return Math.min(arr.reduce((s,k)=>s+calc(k,S.vals[k.id]).earned,0), arr.reduce((s,k)=>s+k.w,0));
+}
+
+const statusColor = { none:'var(--text3)', low:'var(--red)', mid:'var(--amber)', ok:'var(--green)', over:'var(--blue)' };
+const statusLabel = { none:'—', low:'Minim. past', mid:'Rejaga yaqin', ok:'Rejada', over:'Oshdi' };
+const statusCls   = { none:'st-none', low:'st-low', mid:'st-mid', ok:'st-ok', over:'st-over' };
+const progressClr = { none:'#2a2a3a', low:'#ef4444', mid:'#f59e0b', ok:'#22c55e', over:'#3b82f6' };
+
+function renderKPIs(containerId, arr) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = arr.map(k => {
+    const {earned, pct, status} = calc(k, S.vals[k.id]);
+    const col = statusColor[status];
+    const pc = progressClr[status];
+    return `<div class="kpi-item">
+      <div class="kpi-top">
+        <span class="kpi-name">${k.name}</span>
+        <span class="kpi-earned" style="color:${col}">$${earned.toFixed(2)}</span>
+      </div>
+      <div class="kpi-pills">
+        <span class="pill pill-min">Min: ${k.min}</span>
+        <span class="pill pill-plan">Plan: ${k.plan}</span>
+        <span class="pill pill-max">Maks: ${k.max}</span>
+        <span class="pill pill-w">Summa: $${k.w}</span>
+      </div>
+      <div class="kpi-controls">
+        <label>Natija:</label>
+        <input class="kpi-input" type="number" value="${S.vals[k.id]}" placeholder="kiriting..."
+          oninput="setVal('${k.id}',this.value)">
+        <div class="kpi-prog-wrap">
+          <div class="kpi-prog-bg">
+            <div class="kpi-prog-fill" style="width:${pct.toFixed(1)}%;background:${pc}"></div>
+          </div>
+          <div class="kpi-prog-label">${pct.toFixed(0)}%</div>
+        </div>
+        <span class="status-tag ${statusCls[status]}">${statusLabel[status]}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDashKPIs() {
+  const all = [
+    ...KPI.ig.map(k=>({...k,sec:'IG'})),
+    ...KPI.tg.map(k=>({...k,sec:'TG'})),
+    ...KPI.ins.map(k=>({...k,sec:'INS'}))
+  ];
+  document.getElementById('dash-kpi-list').innerHTML = all.map(k => {
+    const {pct,status} = calc(k, S.vals[k.id]);
+    const pc = progressClr[status];
+    const mc = statusColor[status];
+    return `<div class="mini-kpi">
+      <div class="mini-kpi-top">
+        <span class="mini-kpi-name"><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px">[${k.sec}]</span> ${k.name}</span>
+        <span class="mini-kpi-pct" style="color:${mc}">${pct.toFixed(0)}%</span>
+      </div>
+      <div class="kpi-prog-bg"><div class="kpi-prog-fill" style="width:${pct.toFixed(1)}%;background:${pc}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+let chart = null;
+function renderChart() {
+  const ctx = document.getElementById('reelsChart');
+  if(!ctx) return;
+  const reels = S.reels.slice(-12);
+  const labels = reels.map(r=>r.name.length>10?r.name.slice(0,10)+'…':r.name);
+  const data = reels.map(r=>r.views);
+  if(chart) { chart.destroy(); chart=null; }
+  if(reels.length===0) {
+    ctx.parentElement.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:220px;color:var(--text3);font-size:13px;font-family:var(--font-mono)">Reels ma\'lumotlari yo\'q</div>';
+    return;
+  }
+  chart = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Views',data,
+        backgroundColor:'rgba(124,109,250,0.6)',
+        borderColor:'rgba(124,109,250,1)',
+        borderWidth:1, borderRadius:6
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>' '+c.parsed.y.toLocaleString()+' views' } } },
+      scales:{
+        y:{ beginAtZero:true, grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#55556a',font:{size:10},callback:v=>v>=1000?Math.round(v/1000)+'K':v} },
+        x:{ grid:{display:false}, ticks:{color:'#55556a',font:{size:10},autoSkip:false,maxRotation:30} }
+      }
+    }
+  });
+}
+
+function renderReels() {
+  const tbody = document.getElementById('reels-tbody');
+  if(!tbody) return;
+  const arr = S.reels;
+  tbody.innerHTML = arr.length===0
+    ? '<tr class="empty-row"><td colspan="5">Hali reels qo\'shilmagan</td></tr>'
+    : arr.map((r,i)=>`<tr>
+        <td style="color:var(--text3);font-family:var(--font-mono)">${i+1}</td>
+        <td>${r.name}</td>
+        <td style="font-family:var(--font-mono);color:var(--text2)">${r.date}</td>
+        <td style="font-family:var(--font-mono);font-weight:500;color:var(--blue)">${r.views.toLocaleString()}</td>
+        <td><button class="del-btn" onclick="delReel(${i})">o'chir</button></td>
+      </tr>`).join('');
+  const total = arr.reduce((s,r)=>s+r.views,0);
+  const avg = arr.length ? Math.round(total/arr.length) : 0;
+  const rv = v=>document.getElementById(v);
+  if(rv('r-total')) rv('r-total').textContent = total.toLocaleString();
+  if(rv('r-avg'))   rv('r-avg').textContent   = avg.toLocaleString();
+  if(rv('r-count')) rv('r-count').textContent = arr.length;
+  if(rv('d-views')) rv('d-views').textContent = total.toLocaleString();
+}
+
+function setVal(id, val) {
+  S.vals[id] = val;
+  save();
+  renderAll();
+}
+
+function addReel() {
+  const name  = document.getElementById('r-name').value.trim();
+  const date  = document.getElementById('r-date').value;
+  const views = parseInt(document.getElementById('r-views').value)||0;
+  if(!name) { alert('Reels nomini kiriting'); return; }
+  S.reels.push({ name, date:date||'—', views });
+  save();
+  document.getElementById('r-name').value='';
+  document.getElementById('r-date').value='';
+  document.getElementById('r-views').value='';
+  renderAll();
+}
+
+function delReel(i) {
+  if(!confirm('O\'chirilsinmi?')) return;
+  S.reels.splice(i,1);
+  save();
+  renderAll();
+}
+
+function renderAll() {
+  renderKPIs('ig-kpis', KPI.ig);
+  renderKPIs('tg-kpis', KPI.tg);
+  renderKPIs('ins-kpis', KPI.ins);
+  const ig  = sectionTotal(KPI.ig);
+  const tg  = sectionTotal(KPI.tg);
+  const ins = sectionTotal(KPI.ins);
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('ig-earned', '$'+ig.toFixed(2));
+  set('tg-earned', '$'+tg.toFixed(2));
+  set('ins-earned','$'+ins.toFixed(2));
+  set('d-ig','$'+ig.toFixed(2));
+  set('d-tg','$'+tg.toFixed(2));
+  set('d-ins','$'+ins.toFixed(2));
+  set('dash-total','$'+(ig+tg+ins).toFixed(2));
+  renderDashKPIs();
+  renderReels();
+  renderChart();
+}
+
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='dash'||id==='reels') setTimeout(renderChart,80);
+}
+
+renderAll();
+</script>
+</body>
+</html>
